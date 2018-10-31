@@ -41,9 +41,9 @@
 #define TASK_STACK_SIZE     90         // Stack size in words
 #define TASK_PRIORITY       1
 
-#define CD_INDEX_INT_PRIORITY 12			// one higher than step int
+#define CD_INDEX_INT_PRIORITY 12            // one higher than step int
 
-#define MOVE_MAX_WAIT		(5000/portTICK_RATE_MS)
+#define MOVE_MAX_WAIT       (5000/portTICK_RATE_MS)
 
 #define ST_RIGHT            -1
 #define ST_STOP              0
@@ -62,7 +62,7 @@ static const int16_t from_edge_to_corner[] = { 125, 66, END_OF_SEQ };
 static const int16_t from_edge_to_rest[]   = { 370,     END_OF_SEQ };
 
 static const int16_t *seq_tbl[] = {
-	cli_seq_tbl,			// test sequence from CLI
+    cli_seq_tbl,            // test sequence from CLI
     from_rest_to_center,
     from_center_to_edge,
     from_edge_to_corner,
@@ -88,21 +88,21 @@ static bool slow_speed = false;
 
 // step pattern table, half step
 static const uint16_t step_tbl[] = {
-			//  PD6 PD5 PD4
-			//  I   PB  PA  =>  I   PB  PA
-	0x00,   //  0   0   0       on  -   -
-	0x10,   //  0   0   1       on  -   +
-	0x30,   //  0   1   1       on  +   +
-	0x20    //  0   1   0       on  +   -
+            //  PD6 PD5 PD4
+            //  I   PB  PA  =>  I   PB  PA
+    0x00,   //  0   0   0       on  -   -
+    0x10,   //  0   0   1       on  -   +
+    0x30,   //  0   1   1       on  +   +
+    0x20    //  0   1   0       on  +   -
 
 };
 
 #define STEP_TBL_MASK           0x03
 #define STEPPER_STOP            0x70  //  off +   +
 
-#define STEPPER_CONTROL_MASK  	0x00700070
+#define STEPPER_CONTROL_MASK    0x00700070
 
-extern const uint16_t AccTable[];		// acceleration table in tilter.c
+extern const uint16_t AccTable[];       // acceleration table in tilter.c
 
 /* =====================================================================
 ------------------------ Function prototypes ------------------------ */
@@ -119,38 +119,38 @@ Motion task.
 
 static void CdMotorTask(void *pvParameters)
 {
-   	MOTION_MSG_T msg;
-   	const int16_t *seq;
-	int16_t len;
+    MOTION_MSG_T msg;
+    const int16_t *seq;
+    int16_t len;
     int i;
 
-	StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
+    StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
 
-	Delay(500);
+    Delay(500);
 
     // Main loop.
     while(1)
     {
-		// Wait for a command (blocks here)
+        // Wait for a command (blocks here)
         if (xQueueReceive(CdmQueue, &msg, portMAX_DELAY) == pdPASS)
-		{
+        {
 #ifdef DEBUG
             printf("CdmTask: got cmd: %d:%d\r\n",msg.type,msg.value);
 #endif
             seq = NULL;
             
             switch (msg.type)
-			{
+            {
             case CDMC_SEQ:
                 seq = seq_tbl[msg.value];
                 break;
                 
-			case CDMC_INIT:
-				// start initializing
+            case CDMC_INIT:
+                // start initializing
 #ifdef DEBUG
-				printf("CdmTask: start init\r\n");
+                printf("CdmTask: start init\r\n");
 #endif
-				SearchHomePos();
+                SearchHomePos();
                 
                 // drive to rest position after init
                 single_seq[0] = 370;
@@ -163,27 +163,27 @@ static void CdMotorTask(void *pvParameters)
                 seq = single_seq;
                 break;
                 
-			case CDMC_SYNC:
-				xSemaphoreGive(MotionSyncSem);
-				break;
+            case CDMC_SYNC:
+                xSemaphoreGive(MotionSyncSem);
+                break;
 
-			case CDMC_COEFF:
-				par_a = msg.value;
-				break;
+            case CDMC_COEFF:
+                par_a = msg.value;
+                break;
 
-			case CDMC_LIMIT:
-				par_b = msg.value;
-				break;
+            case CDMC_LIMIT:
+                par_b = msg.value;
+                break;
 
-			case CDMC_SHOW_POS:
-				printf("pos=%d\r\n",pos_ctr);
-				break;
+            case CDMC_SHOW_POS:
+                printf("pos=%d\r\n",pos_ctr);
+                break;
             }
 
             if (seq != NULL)
             {
-            	// execute the sequence
-				for (i = 0; seq[i] != END_OF_SEQ; ++i)
+                // execute the sequence
+                for (i = 0; seq[i] != END_OF_SEQ; ++i)
                 {
                     // calculate movement direction and length in steps
                     if (pos_ctr > seq[i])
@@ -210,15 +210,15 @@ static void CdMotorTask(void *pvParameters)
                     // length of slewing (driving at max velocity)
                     slew_cnt = len - 2*max_acc_idx - 1;
 
-                    acc_idx = 0;	// start in AccTable[0]
-                    accel = true;	// first we are accelerating
+                    acc_idx = 0;    // start in AccTable[0]
+                    accel = true;   // first we are accelerating
 
-                    StartStepping();	// enable stepper interrupt
+                    StartStepping();    // enable stepper interrupt
                     
                     // wait for movement end (blocks here)
                     if (xSemaphoreTake(EndMotionSem, MOVE_MAX_WAIT) == pdPASS)
                     {
-                        StopStepping();	// disable stepper interrupt
+                        StopStepping(); // disable stepper interrupt
 #ifdef DEBUG
                         printf("stop stepping\r\n");
 #endif
@@ -240,59 +240,59 @@ static void CdMotorTask(void *pvParameters)
 Search home position
 --------------------------------------------------------------------- */
 
-#define MAX_SEARCH1_TIME	(700/portTICK_RATE_MS)
-#define MAX_SEARCH2_TIME	(3000/portTICK_RATE_MS)
-#define ADD_STEP_TIME   	(500/portTICK_RATE_MS)
+#define MAX_SEARCH1_TIME    (700/portTICK_RATE_MS)
+#define MAX_SEARCH2_TIME    (3000/portTICK_RATE_MS)
+#define ADD_STEP_TIME       (500/portTICK_RATE_MS)
 
 static void SearchHomePos( void )
 {
-	bool search_again;
+    bool search_again;
 
-	slow_speed = true;	// use slow speed (short ramp)
+    slow_speed = true;  // use slow speed (short ramp)
 
-	do {
-		search_again = false;
+    do {
+        search_again = false;
 
-		// Assume we are right from index: start moving left
-		step_dir = ST_LEFT;
+        // Assume we are right from index: start moving left
+        step_dir = ST_LEFT;
         acc_idx = 0;
 
-		// enable index interrupt and start motor
-		SetIndexInterrupt(ENABLE);
-		StartStepping();
+        // enable index interrupt and start motor
+        SetIndexInterrupt(ENABLE);
+        StartStepping();
 
-		// wait for index interrupt (blocks here)
-		if (xSemaphoreTake(IndexSem, MAX_SEARCH1_TIME) == pdPASS)
-		{
-			pos_ctr = 310;		// index is at 310 steps from left
+        // wait for index interrupt (blocks here)
+        if (xSemaphoreTake(IndexSem, MAX_SEARCH1_TIME) == pdPASS)
+        {
+            pos_ctr = 310;      // index is at 310 steps from left
 #ifdef DEBUG
-			printf("index found\r\n");
+            printf("index found\r\n");
 #endif
-		}
-		else
-		{	// index not found in time, search to right
-			step_dir = ST_RIGHT;
+        }
+        else
+        {   // index not found in time, search to right
+            step_dir = ST_RIGHT;
 
-			// wait for index interrupt (blocks here)
-			if (xSemaphoreTake(IndexSem, MAX_SEARCH2_TIME) == pdPASS)
-			{
-				// found, step over index and do searching again
-				// after this we know we are right from index
-				vTaskDelay(ADD_STEP_TIME);
-				search_again = true;
-			}
-			else
-				error_code |= CDM_INDEX_ERROR;	// index not found
-		}
+            // wait for index interrupt (blocks here)
+            if (xSemaphoreTake(IndexSem, MAX_SEARCH2_TIME) == pdPASS)
+            {
+                // found, step over index and do searching again
+                // after this we know we are right from index
+                vTaskDelay(ADD_STEP_TIME);
+                search_again = true;
+            }
+            else
+                error_code |= CDM_INDEX_ERROR;  // index not found
+        }
 
-		// end movement and disable index interrupt
-		StopStepping();
-		StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
-		SetIndexInterrupt(DISABLE);
-	}
-	while (search_again);
+        // end movement and disable index interrupt
+        StopStepping();
+        StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
+        SetIndexInterrupt(DISABLE);
+    }
+    while (search_again);
 
-	slow_speed = false;
+    slow_speed = false;
 }
 
 /* =====================================================================
@@ -302,22 +302,22 @@ Module initialization function. Create queues and task.
 uint32_t CdMotorInit(void)
 {
     // Queue for commands
-	CdmQueue = xQueueCreate(CDM_QUEUE_SIZE, sizeof(MOTION_MSG_T));
-	if (CdmQueue == NULL)
+    CdmQueue = xQueueCreate(CDM_QUEUE_SIZE, sizeof(MOTION_MSG_T));
+    if (CdmQueue == NULL)
     {
         return(1);
     }
 
-	// Semaphore for end of movement
-	EndMotionSem = xSemaphoreCreateBinary();
-	if (EndMotionSem == NULL)
+    // Semaphore for end of movement
+    EndMotionSem = xSemaphoreCreateBinary();
+    if (EndMotionSem == NULL)
     {
         return(1);
     }
     
     // Semaphore for index
-	IndexSem = xSemaphoreCreateBinary();
-	if (IndexSem == NULL)
+    IndexSem = xSemaphoreCreateBinary();
+    if (IndexSem == NULL)
     {
         return(1);
     }
@@ -339,24 +339,24 @@ Enable/disable EXTI10 interrupt, from cd motor opto
 
 static void SetIndexInterrupt(FunctionalState state)
 {
-	NVIC_InitTypeDef NVIC_InitStructure;
-	EXTI_InitTypeDef EXTI_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+    EXTI_InitTypeDef EXTI_InitStructure;
 
     EXTI_ClearITPendingBit(EXTI_Line10 | EXTI_Line11 | EXTI_Line12 | EXTI_Line13 | EXTI_Line14 | EXTI_Line15 );
 
-	// configure NVIC
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = CD_INDEX_INT_PRIORITY;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = state;
-	NVIC_Init(&NVIC_InitStructure);
+    // configure NVIC
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = CD_INDEX_INT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = state;
+    NVIC_Init(&NVIC_InitStructure);
 
-	// Configure EXTI line
-	EXTI_InitStructure.EXTI_Line = EXTI_Line10;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_InitStructure.EXTI_LineCmd = state;
-	EXTI_Init(&EXTI_InitStructure);
+    // Configure EXTI line
+    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_LineCmd = state;
+    EXTI_Init(&EXTI_InitStructure);
 }
 
 /* =======================================================================
@@ -368,7 +368,7 @@ static void StartStepping(void)
     uint16_t cur_ctr;
 
     cur_ctr = TIM_GetCounter(TIM3);
-    TIM_SetCompare2(TIM3, cur_ctr + 200);	// first interrupt after 100 us
+    TIM_SetCompare2(TIM3, cur_ctr + 200);   // first interrupt after 100 us
 
     TIM_ClearITPendingBit(TIM3, TIM_IT_CC2);
     TIM_ITConfig(TIM3, TIM_IT_CC2, ENABLE);
@@ -389,18 +389,18 @@ Feeds next step to stepper motor. Called from TIM3 interrupt.
 
 void StepColdetMotor(void)
 {
-	static int16_t cur_step = 0;
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	uint16_t capture;
-	uint32_t offset;
+    static int16_t cur_step = 0;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint16_t capture;
+    uint32_t offset;
 
-	TEST_ON;
+    TEST_ON;
 
     capture = TIM_GetCapture2(TIM3);
 
     // feed next step to stepper port
     cur_step = (cur_step + step_dir) & STEP_TBL_MASK;
-	StepperOut(step_tbl[cur_step],STEPPER_CONTROL_MASK);
+    StepperOut(step_tbl[cur_step],STEPPER_CONTROL_MASK);
 
     // update position counter
     pos_ctr -= step_dir;
@@ -412,8 +412,8 @@ void StepColdetMotor(void)
     if (slow_speed)
     {
         // drive with slow speed, short ramp (during index searching)
-		if (acc_idx < 20)
-			acc_idx++;
+        if (acc_idx < 20)
+            acc_idx++;
     }
     else  // normal operation, use ramps
     {
@@ -429,7 +429,7 @@ void StepColdetMotor(void)
             acc_idx--;
         }
         else
-        {	// slewing => update slew count
+        {   // slewing => update slew count
             // if slew end, start decelaration ramp
             if (slew_cnt == 0)
                 accel = false;
@@ -441,14 +441,14 @@ void StepColdetMotor(void)
         if (slew_cnt == 0 && acc_idx == 0)
         {
             step_dir = ST_STOP;
-			StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
+            StepperOut(STEPPER_STOP,STEPPER_CONTROL_MASK);
 
             xSemaphoreGiveFromISR(EndMotionSem, &xHigherPriorityTaskWoken);
             portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
         }
     }
 
-	TEST_OFF;
+    TEST_OFF;
 }
 
 /* =======================================================================
@@ -457,18 +457,18 @@ Index interrupt handler
 
 void EXTI15_10_IRQHandler(void)
 {
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     // Clear possible other EXTI-interrupts
-	EXTI_ClearITPendingBit(EXTI_Line11 | EXTI_Line12 | EXTI_Line13 | EXTI_Line14 | EXTI_Line15);
+    EXTI_ClearITPendingBit(EXTI_Line11 | EXTI_Line12 | EXTI_Line13 | EXTI_Line14 | EXTI_Line15);
 
-	// Check if EXTI_Line10 is asserted
+    // Check if EXTI_Line10 is asserted
     if(EXTI_GetITStatus(EXTI_Line10) != RESET)
     {
         EXTI_ClearITPendingBit(EXTI_Line10);
 
-		xSemaphoreGiveFromISR(IndexSem, &xHigherPriorityTaskWoken);
-		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+        xSemaphoreGiveFromISR(IndexSem, &xHigherPriorityTaskWoken);
+        portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
     }
 }
 

@@ -26,7 +26,7 @@
 
 #define READY 99
 
-#define CDP_RES_QUEUE_SIZE	3
+#define CDP_RES_QUEUE_SIZE  3
 
 SemaphoreHandle_t ColdetStartSem;
 xQueueHandle CdpResultQueue;

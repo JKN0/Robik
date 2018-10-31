@@ -270,7 +270,7 @@ int CheckColors( void )
     if (rc == FAIL)
     {
         // try another way
-    	rc = CheckEdges2();
+        rc = CheckEdges2();
         if (rc == FAIL)
             return 5;
     }
@@ -312,7 +312,7 @@ int TokenizeInbuf(void)
     {
         q = strchr(p,' ');
         if (q == NULL)
-        	break;
+            break;
         else
             *q = '\0';
 
@@ -321,7 +321,7 @@ int TokenizeInbuf(void)
     }
 
     if (i != FACES)
-    	return FAIL;
+        return FAIL;
 
     return OK;
 }
@@ -691,7 +691,7 @@ int CheckEdges1( void )
         for (i = 0; i < 2; i++)
         {
             // reset candidate
-        	CopyToCandidate();
+            CopyToCandidate();
             
             // search the wrong tile from the cube's cubie
             for (t = 0; t < 2; t++)
@@ -1232,7 +1232,7 @@ void CopyToCandidate( void )
 // is not in any programming language but resembles very basic BASIC.
 
 uint8_t cube2[FACES][3][3];
-uint8_t C[CORNERS+1][4];	// 1-based indexing used
+uint8_t C[CORNERS+1][4];    // 1-based indexing used
 uint8_t E[EDGES+1][3];
 int PC[CORNERS+1];
 int PE[EDGES+1];

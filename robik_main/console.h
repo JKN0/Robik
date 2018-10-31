@@ -14,8 +14,8 @@
 #ifndef __CONSOLE_H__
 #define __CONSOLE_H__
 
-#define CONS_RX_QUEUE_SIZE		10
-#define CONS_TX_QUEUE_SIZE		80
+#define CONS_RX_QUEUE_SIZE      10
+#define CONS_TX_QUEUE_SIZE      80
 
 xQueueHandle ConsoleRxQueue;
 xQueueHandle ConsoleTxQueue;

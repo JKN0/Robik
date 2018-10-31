@@ -39,14 +39,14 @@
 /* =====================================================================
 ------------------------ Constants & macros ------------------------- */
 
-#define RESP_MAX_WAIT		(1000/portTICK_RATE_MS)
+#define RESP_MAX_WAIT       (1000/portTICK_RATE_MS)
 
-#define MOVE_MAX_WAIT		(5000/portTICK_RATE_MS)
+#define MOVE_MAX_WAIT       (5000/portTICK_RATE_MS)
 
 typedef struct move_step_t {
-	uint8_t dest;
-	uint16_t type;
-	uint8_t value;
+    uint8_t dest;
+    uint16_t type;
+    uint8_t value;
 } MOVE_STEP_T;
 
 /* =====================================================================
@@ -72,7 +72,7 @@ void DetectColors(void)
 {
     uint8_t face,tile;
     bool start_scan = true;
-	int16_t color;
+    int16_t color;
     
     // tell move task we are starting color scanning
     Send2Mov(MVC_C_START,0,0);
@@ -108,7 +108,7 @@ void DetectColors(void)
                 return;
 
             // tell CD probe task to detect current color and wait for result
-       		xSemaphoreGive(ColdetStartSem);
+            xSemaphoreGive(ColdetStartSem);
             if (xQueueReceive(CdpResultQueue, &color, RESP_MAX_WAIT) == pdFAIL ||
                 color == NONE)
             {

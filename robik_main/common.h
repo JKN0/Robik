@@ -15,19 +15,19 @@
 #define __COMMON_H__
 
 typedef struct motion_msg_t {
-	uint16_t type;
-	int16_t value;
+    uint16_t type;
+    int16_t value;
 } MOTION_MSG_T;
 
-#define SYNC_MAX_WAIT		(14000/portTICK_RATE_MS)
+#define SYNC_MAX_WAIT       (14000/portTICK_RATE_MS)
 
-#define END_OF_SEQ			0x7FFF
-#define SEQ_SYNC			0x7FFE
+#define END_OF_SEQ          0x7FFF
+#define SEQ_SYNC            0x7FFE
 
 #define OK                  0
 #define FAIL                1
 
-#define STEP_INT_PRIORITY	11			// stepper interrupt priority
+#define STEP_INT_PRIORITY   11          // stepper interrupt priority
 
 // Global error codes
 extern uint32_t error_code;
@@ -45,8 +45,8 @@ extern uint32_t error_code;
 #define COLDET_SYNC_ERROR   0x00000400
 #define COLDET_DETECT_ERROR 0x00000800
 #define SOLVER_INIT_ERROR   0x00001000
-#define SOLVER_ERROR   		0x00002000
-#define EXEC_SYNC_ERROR 	0x00004000
+#define SOLVER_ERROR        0x00002000
+#define EXEC_SYNC_ERROR     0x00004000
 
 extern uint32_t monitor_flags;
 
@@ -54,8 +54,8 @@ extern uint32_t monitor_flags;
 #define MON_SOLVER_COMM     0x00000002
 #define MON_DISPLAY         0x00000004
 
-#define TEST_ON 			GPIO_WriteBit(GPIOE, GPIO_Pin_13, Bit_SET)
-#define TEST_OFF 			GPIO_WriteBit(GPIOE, GPIO_Pin_13, Bit_RESET)
+#define TEST_ON             GPIO_WriteBit(GPIOE, GPIO_Pin_13, Bit_SET)
+#define TEST_OFF            GPIO_WriteBit(GPIOE, GPIO_Pin_13, Bit_RESET)
 
 extern int16_t cli_seq_tbl[];
 extern MOTION_MSG_T cli_msg_tbl[];
@@ -63,14 +63,14 @@ extern MOTION_MSG_T cli_msg_tbl[];
 // Test modes
 extern uint8_t test_mode;
 
-#define TEST_NONE			0
-#define TEST_TLM			1
-#define TEST_TWM			2
-#define TEST_CDM			3
-#define TEST_DSP			4
-#define TEST_MOV			5
-#define TEST_CDP			6
-#define TEST_CUB			7
+#define TEST_NONE           0
+#define TEST_TLM            1
+#define TEST_TWM            2
+#define TEST_CDM            3
+#define TEST_DSP            4
+#define TEST_MOV            5
+#define TEST_CDP            6
+#define TEST_CUB            7
 
 #define FACES       6
 #define EDGES      12

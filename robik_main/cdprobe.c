@@ -44,18 +44,18 @@
 #define TASK_STACK_SIZE     100         // Stack size in words
 #define TASK_PRIORITY       1
 
-#define ADC_INT_PRIORITY	13			// one higher than UART
+#define ADC_INT_PRIORITY    13          // one higher than UART
 
-#define ADC_DELAY			(500/portTICK_RATE_MS)
-#define ADC_MAX_WAIT		(50/portTICK_RATE_MS)
+#define ADC_DELAY           (500/portTICK_RATE_MS)
+#define ADC_MAX_WAIT        (50/portTICK_RATE_MS)
 
 #define SAMPLE_COUNT        16
 
-#define MEAS_PREDELAY		(4/portTICK_RATE_MS)
+#define MEAS_PREDELAY       (4/portTICK_RATE_MS)
 
-#define MEAS_FAIL    		9999
+#define MEAS_FAIL           9999
 
-#define MIN_DIFF    		4
+#define MIN_DIFF            4
 
 /* =====================================================================
 ------------------------ Typedefs ----------------------------------- */
@@ -67,11 +67,11 @@ typedef struct pwm_t {
 } PWM_T;
 
 typedef struct step_t {
-	uint16_t limit;
-	uint16_t next_gt;
-	uint16_t color_gt;
-	uint16_t next_lt;
-	uint16_t color_lt;
+    uint16_t limit;
+    uint16_t next_gt;
+    uint16_t color_gt;
+    uint16_t next_lt;
+    uint16_t color_lt;
 } STEP_T;
 
 /* =====================================================================
@@ -84,7 +84,7 @@ uint16_t adcvals[SAMPLE_COUNT];
 // --- Color detection tables ---
 
 static const PWM_T pwm[] = {
-				//  r    g    b
+                //  r    g    b
                 {  0,   500,   0 },    // 0
                 {  900,   0,   0 },    // 1
                 {  230,   0, 480 },    // 2
@@ -93,7 +93,7 @@ static const PWM_T pwm[] = {
 };
 
 static const STEP_T steps[] = {
-					// limit  next_gt  color_gt  next_lt  color_lt
+                    // limit  next_gt  color_gt  next_lt  color_lt
                     {   320,       3,    NONE,        1,    NONE },    // 0
                     {   140,   READY,     ORA,        2,    NONE },    // 1
                     {   170,   READY,     WHT,    READY,     YEL },    // 2
@@ -103,7 +103,7 @@ static const STEP_T steps[] = {
 
 /* --- old tables
 static const PWM_T pwm[] = {
-				//  r    g    b
+                //  r    g    b
                 {  999,   0,   0 },    // 0
                 {  500,   0, 400 },    // 1
                 {  800,   0,   0 },    // 2
@@ -113,7 +113,7 @@ static const PWM_T pwm[] = {
 };
 
 static const STEP_T steps[] = {
-					// limit  next_gt  color_gt  next_lt  color_lt
+                    // limit  next_gt  color_gt  next_lt  color_lt
                     {   357,       3,    NONE,        1,    NONE },    // 0
                     {   200,   READY,     YEL,        2,    NONE },    // 1
                     {   150,   READY,     ORA,    READY,     WHT },    // 2
@@ -125,7 +125,7 @@ static const STEP_T steps[] = {
 
 /* --- very old tables
 static const PWM_T pwm[] = {
-				//  r    g    b
+                //  r    g    b
                 {  999,   0,   0 },    // 0
                 {  500,   0, 400 },    // 1
                 {  500, 130,   0 },    // 2
@@ -134,7 +134,7 @@ static const PWM_T pwm[] = {
 };
 
 static const STEP_T steps[] = {
-					// limit  next_gt  color_gt  next_lt  color_lt
+                    // limit  next_gt  color_gt  next_lt  color_lt
                     {   220,       3,    NONE,        1,    NONE },    // 0
                     {   200,   READY,     YEL,        2,    NONE },    // 1
                     {   170,   READY,     ORA,    READY,     WHT },    // 2
@@ -164,88 +164,88 @@ static void CdProbeTask(void *pvParameters)
     uint8_t cur_step, next_step;
     int16_t diff;
 
-	// Ensure that xxxxFromISR() are not called before scheduler is started
-	// by enabling interrupts not earlier than here
+    // Ensure that xxxxFromISR() are not called before scheduler is started
+    // by enabling interrupts not earlier than here
     InitAdcInterrupt();
 
     // Main loop.
     while(1)
     {
-		// Wait for start command (blocks here)
-		if (xSemaphoreTake(ColdetStartSem, portMAX_DELAY) == pdPASS)
-		{
-			if (monitor_flags & MON_COLDET)
-				printf("Coldet start:\r\n");
+        // Wait for start command (blocks here)
+        if (xSemaphoreTake(ColdetStartSem, portMAX_DELAY) == pdPASS)
+        {
+            if (monitor_flags & MON_COLDET)
+                printf("Coldet start:\r\n");
 
-			// loop until color is found, 1...3 loops
-			cur_step = 0;
-			while (1)
-			{
-				// Set RGB led to color used in the current step
-				SetRGB_PWMs(pwm[cur_step].r, pwm[cur_step].g, pwm[cur_step].b);
+            // loop until color is found, 1...3 loops
+            cur_step = 0;
+            while (1)
+            {
+                // Set RGB led to color used in the current step
+                SetRGB_PWMs(pwm[cur_step].r, pwm[cur_step].g, pwm[cur_step].b);
 
-			    // Wait for a while for phototransistor voltage to stabilize (RC-circuit)
-			    vTaskDelay(MEAS_PREDELAY);
+                // Wait for a while for phototransistor voltage to stabilize (RC-circuit)
+                vTaskDelay(MEAS_PREDELAY);
 
-			    // Measure the voltage with ADC
-				measval = Measure();
+                // Measure the voltage with ADC
+                measval = Measure();
 
-				if (monitor_flags & MON_COLDET)
-					printf("  step %d: %d\r\n",cur_step,measval);
+                if (monitor_flags & MON_COLDET)
+                    printf("  step %d: %d\r\n",cur_step,measval);
 
-				if (measval == MEAS_FAIL || measval > 850)
-				{
-					// measurement value not valid: exit loop
-					color = NONE;
-					break;
-				}
-				else
-				{	// Compare to limit and decide next step
-					diff = measval - steps[cur_step].limit;
+                if (measval == MEAS_FAIL || measval > 850)
+                {
+                    // measurement value not valid: exit loop
+                    color = NONE;
+                    break;
+                }
+                else
+                {   // Compare to limit and decide next step
+                    diff = measval - steps[cur_step].limit;
 
-					if (diff > 0)	// measval > limit
-					{
-						if (diff < MIN_DIFF)
-						{
-							// too close to limit
-							color = NONE;
-							break;
-						}
+                    if (diff > 0)   // measval > limit
+                    {
+                        if (diff < MIN_DIFF)
+                        {
+                            // too close to limit
+                            color = NONE;
+                            break;
+                        }
 
-						next_step = steps[cur_step].next_gt;
-						color = steps[cur_step].color_gt;
-					}
-					else	// measval < limit
-					{
-						if (-diff < MIN_DIFF)
-						{
-							// too close to limit
-							color = NONE;
-							break;
-						}
+                        next_step = steps[cur_step].next_gt;
+                        color = steps[cur_step].color_gt;
+                    }
+                    else    // measval < limit
+                    {
+                        if (-diff < MIN_DIFF)
+                        {
+                            // too close to limit
+                            color = NONE;
+                            break;
+                        }
 
-						next_step = steps[cur_step].next_lt;
-						color = steps[cur_step].color_lt;
-					}
+                        next_step = steps[cur_step].next_lt;
+                        color = steps[cur_step].color_lt;
+                    }
 
-					// If no next step, we know the color: exit loop
-					if (next_step == READY)
-						break;
+                    // If no next step, we know the color: exit loop
+                    if (next_step == READY)
+                        break;
 
-					// next round
-					cur_step = next_step;
-				}
-			}
+                    // next round
+                    cur_step = next_step;
+                }
+            }
 
-			if (monitor_flags & MON_COLDET)
-				printf("  result: %s\r\n",col_names[color]);
+            if (monitor_flags & MON_COLDET)
+                printf("  result: %s\r\n",col_names[color]);
 
-			// Send the detected color
-			xQueueSend(CdpResultQueue, &color, portMAX_DELAY);
+            // Send the detected color
+            xQueueSend(CdpResultQueue, &color, portMAX_DELAY);
 
-			// Turn off RGB-led
-			SetRGB_PWMs(0,0,0);
-		}
+            // Turn off RGB-led
+            SetRGB_PWMs(0,0,0);
+        }
     }
 }
 
@@ -256,22 +256,22 @@ Task initialization function. Create queues and tasks.
 uint32_t CdProbeInit(void)
 {
 
-	// create semaphore for color detection start
-	ColdetStartSem = xSemaphoreCreateBinary();
-	if (ColdetStartSem == NULL)
+    // create semaphore for color detection start
+    ColdetStartSem = xSemaphoreCreateBinary();
+    if (ColdetStartSem == NULL)
     {
         return(1);
     }
 
-	// create semaphore for ADC ending
-	AdcSem = xSemaphoreCreateBinary();
-	if (AdcSem == NULL)
+    // create semaphore for ADC ending
+    AdcSem = xSemaphoreCreateBinary();
+    if (AdcSem == NULL)
     {
         return(1);
     }
 
     // Create a queue for receiving detected color values from cdp task
-	CdpResultQueue = xQueueCreate(CDP_RES_QUEUE_SIZE, sizeof(uint16_t));
+    CdpResultQueue = xQueueCreate(CDP_RES_QUEUE_SIZE, sizeof(uint16_t));
 
     // Create the color detector task.
     if(xTaskCreate(CdProbeTask, "CDP", TASK_STACK_SIZE, NULL,
@@ -289,16 +289,16 @@ uint32_t CdProbeInit(void)
 
 static void InitAdcInterrupt(void)
 {
-	NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
 
-	// configure NVIC: ADC
-	NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = ADC_INT_PRIORITY;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+    // configure NVIC: ADC
+    NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = ADC_INT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
-	ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
+    ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
 }
 
 /* =======================================================================
@@ -311,21 +311,21 @@ static uint16_t Measure( void )
     uint16_t measval;
     int i;
 
-	StartAdcSampling();
+    StartAdcSampling();
 
-	// wait for all samples taken
-	if (xSemaphoreTake(AdcSem, ADC_MAX_WAIT) == pdPASS)
-	{
-		for (i = 0; i < SAMPLE_COUNT; i++)
-			sum += adcvals[i];
+    // wait for all samples taken
+    if (xSemaphoreTake(AdcSem, ADC_MAX_WAIT) == pdPASS)
+    {
+        for (i = 0; i < SAMPLE_COUNT; i++)
+            sum += adcvals[i];
 
-		measval = sum/(SAMPLE_COUNT*4);		// extra division by 4: 12 bits -> 10 bits
-	}
-	else
-		measval = MEAS_FAIL;
+        measval = sum/(SAMPLE_COUNT*4);     // extra division by 4: 12 bits -> 10 bits
+    }
+    else
+        measval = MEAS_FAIL;
 
-	StopAdcSampling();
-	return measval;
+    StopAdcSampling();
+    return measval;
 }
 
 /* =======================================================================
@@ -370,24 +370,24 @@ sets the semaphore AdcSem.
 
 void ADC1_2_IRQHandler(void)
 {
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	static int sample_idx = 0;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    static int sample_idx = 0;
 
-	//Check if ADC EOC int is asserted
-	if(ADC_GetITStatus(ADC1, ADC_IT_EOC) != RESET)
+    //Check if ADC EOC int is asserted
+    if(ADC_GetITStatus(ADC1, ADC_IT_EOC) != RESET)
     {
-		ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
+        ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
 
-		adcvals[sample_idx] = ADC_GetConversionValue(ADC1);
-		sample_idx++;
+        adcvals[sample_idx] = ADC_GetConversionValue(ADC1);
+        sample_idx++;
 
-		if (sample_idx >= SAMPLE_COUNT)
-		{
-			sample_idx = 0;
+        if (sample_idx >= SAMPLE_COUNT)
+        {
+            sample_idx = 0;
 
-			xSemaphoreGiveFromISR(AdcSem, &xHigherPriorityTaskWoken);
-			portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
-		}
+            xSemaphoreGiveFromISR(AdcSem, &xHigherPriorityTaskWoken);
+            portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+        }
     }
 }
 
@@ -404,7 +404,7 @@ void StartAdc(void)
     capture = TIM_GetCapture3(TIM3);
     TIM_SetCompare3(TIM3, capture + COLDET_SAMPLE_INTERVAL);
 
-    ADC_SoftwareStartConvCmd(ADC1, ENABLE);			// start one sample
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE);         // start one sample
 }
 
 /* ============================ EOF ====================================== */
